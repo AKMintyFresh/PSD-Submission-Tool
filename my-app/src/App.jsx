@@ -16,7 +16,15 @@ const ProjectSubmissionForm = () => {
     projectJustification: '',
     subAwardType: '',
     projectType: '',
-    costEstimate: ''
+    costEstimate: '',
+    deficiencies: [{
+      fedsId: '',
+      description: '',
+      totalBudget: '',
+      costAddressed: '',
+      percentageAddressed: '',
+      deficiencyCode: ''
+    }]
   });
   
   const [files, setFiles] = useState([]);
@@ -146,6 +154,55 @@ const ProjectSubmissionForm = () => {
         [name]: ''
       }));
     }
+  };
+
+  const handleDeficiencyChange = (index, field, value) => {
+    setFormData(prev => {
+      const updatedDeficiencies = [...prev.deficiencies];
+      updatedDeficiencies[index] = {
+        ...updatedDeficiencies[index],
+        [field]: value
+      };
+      
+      // Auto-calculate percentage if both totalBudget and costAddressed are numbers
+      if (field === 'totalBudget' || field === 'costAddressed') {
+        const totalBudget = field === 'totalBudget' ? parseFloat(value) : parseFloat(updatedDeficiencies[index].totalBudget);
+        const costAddressed = field === 'costAddressed' ? parseFloat(value) : parseFloat(updatedDeficiencies[index].costAddressed);
+        
+        if (!isNaN(totalBudget) && !isNaN(costAddressed) && totalBudget !== 0) {
+          updatedDeficiencies[index].percentageAddressed = ((costAddressed / totalBudget) * 100).toFixed(1);
+        }
+      }
+      
+      return {
+        ...prev,
+        deficiencies: updatedDeficiencies
+      };
+    });
+  };
+
+  const addDeficiencyRow = () => {
+    setFormData(prev => ({
+      ...prev,
+      deficiencies: [
+        ...prev.deficiencies,
+        {
+          fedsId: '',
+          description: '',
+          totalBudget: '',
+          costAddressed: '',
+          percentageAddressed: '',
+          deficiencyCode: ''
+        }
+      ]
+    }));
+  };
+
+  const removeDeficiencyRow = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      deficiencies: prev.deficiencies.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -356,6 +413,101 @@ const ProjectSubmissionForm = () => {
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1">
+            Deficiencies
+          </label>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse min-w-full mb-2">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700 w-28">FEDS ID</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700">Description</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700">Total FEDS Budget Amount</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700">Cost Addressed by Project</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700">% Addressed</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700">FEDS Deficiency Code</th>
+                  <th className="border px-4 py-2 text-left text-sm font-medium text-gray-700 w-16">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.deficiencies.map((deficiency, index) => (
+                  <tr key={index}>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.fedsId}
+                        onChange={(e) => handleDeficiencyChange(index, 'fedsId', e.target.value)}
+                        className="w-full p-1 border rounded focus:ring-1 focus:ring-blue-500 font-mono"
+                        placeholder="3001234"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.description}
+                        onChange={(e) => handleDeficiencyChange(index, 'description', e.target.value)}
+                        className="w-full p-1 border rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.totalBudget}
+                        onChange={(e) => handleDeficiencyChange(index, 'totalBudget', e.target.value)}
+                        placeholder="$"
+                        className="w-full p-1 border rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.costAddressed}
+                        onChange={(e) => handleDeficiencyChange(index, 'costAddressed', e.target.value)}
+                        placeholder="$"
+                        className="w-full p-1 border rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.percentageAddressed}
+                        readOnly
+                        className="w-full p-1 border rounded bg-gray-50"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="text"
+                        value={deficiency.deficiencyCode}
+                        onChange={(e) => handleDeficiencyChange(index, 'deficiencyCode', e.target.value)}
+                        className="w-full p-1 border rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="border px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => removeDeficiencyRow(index)}
+                        className="text-red-500 hover:text-red-700"
+                        disabled={formData.deficiencies.length === 1}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            onClick={addDeficiencyRow}
+            className="text-sm text-blue-500 hover:text-blue-700 font-medium"
+          >
+            + Add Another Deficiency
+          </button>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium mb-1" htmlFor="costEstimate">
             Cost Estimate *
           </label>
@@ -445,6 +597,9 @@ const ProjectSubmissionForm = () => {
       </form>
     </div>
   );
+};
+
+export default ProjectSubmissionForm;
 };
 
 export default ProjectSubmissionForm;
